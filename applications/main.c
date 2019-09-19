@@ -25,8 +25,6 @@ const char *post_data = "RT-Thread is an open source IoT operating system from C
 
 void wlan_ready_handler(int event, struct rt_wlan_buff *buff, void *parameter);
 void wlan_station_disconnect_handler(int event, struct rt_wlan_buff *buff, void *parameter);
-int webclient_get_data(void);
-int webclient_post_data(void);
 
 int main(void)
 {
@@ -61,11 +59,6 @@ int main(void)
         rt_sem_delete(&net_ready);
         return -RT_ERROR;
     }
-
-    /* HTTP GET 请求发送 */
-    webclient_get_data();
-    /* HTTP POST 请求发送 */
-    webclient_post_data();
 }
 
 /**
@@ -82,44 +75,4 @@ void wlan_ready_handler(int event, struct rt_wlan_buff *buff, void *parameter)
 void wlan_station_disconnect_handler(int event, struct rt_wlan_buff *buff, void *parameter)
 {
     LOG_I("disconnect from the network!");
-}
-
-/* HTTP client download data by GET request */
-int webclient_get_data(void)
-{
-    unsigned char *buffer = RT_NULL;
-    int length = 0;
-
-    length = webclient_request(HTTP_GET_URL, RT_NULL, RT_NULL, &buffer);
-    if (length < 0)
-    {
-        LOG_E("webclient GET request response data error.");
-        return -RT_ERROR;
-    }
-
-    LOG_D("webclient GET request response data :");
-    LOG_D("%s", buffer);
-
-    web_free(buffer);
-    return RT_EOK;
-}
-
-/* HTTP client upload data to server by POST request */
-int webclient_post_data(void)
-{
-    unsigned char *buffer = RT_NULL;
-    int length = 0;
-
-    length = webclient_request(HTTP_POST_URL, RT_NULL, post_data, &buffer);
-    if (length < 0)
-    {
-        LOG_E("webclient POST request response data error.");
-        return -RT_ERROR;
-    }
-
-    LOG_D("webclient POST request response data :");
-    LOG_D("%s", buffer);
-
-    web_free(buffer);
-    return RT_EOK;
 }
