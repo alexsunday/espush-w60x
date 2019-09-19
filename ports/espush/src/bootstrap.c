@@ -5,6 +5,7 @@
 #include <cJSON.h>
 
 #include "bootstrap.h"
+#include "utils.h"
 
 const char* URL = "http://light.espush.cn/api/portal/light/bootstrap";
 
@@ -56,9 +57,16 @@ int bootstrap(struct _server_addr_s *addr)
 {
 	RT_ASSERT(addr);
 	unsigned char *result = NULL;
-		
-	int rc = webclient_request(URL, NULL, NULL, &result);
+	
+	char imei_buf[16];
+	char url_buf[256];
+	get_imei((uint8*)imei_buf);
+
+	rt_snprintf(url_buf, sizeof(url_buf), "%s?imei=%s&imsi=%s&version=%s&project=%s", URL, imei_buf, imei_buf, "1.0.1", "PROJECT-WIFI-W60X");
+	rt_kprintf("URL:=>[%s]\r\n", url_buf);
+	int rc = webclient_request(url_buf, NULL, NULL, &result);
 	if(rc < 0) {
+		rt_kprintf("request failed. %d\r\n", rc);
 		return rc;
 	}
 	
@@ -66,6 +74,7 @@ int bootstrap(struct _server_addr_s *addr)
 	
 	rc = parse_response((const char*)result, addr);
 	if(rc < 0) {
+		rt_kprintf("parse response failed. %d\r\n", rc);
 		return rc;
 	}
 	
