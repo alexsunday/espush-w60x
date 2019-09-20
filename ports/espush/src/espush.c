@@ -6,6 +6,7 @@
 #include "bootstrap.h"
 #include "protoframe.h"
 #include "utils.h"
+#include "lightproto.h"
 
 const uint8 auth_success = 0x00;
 const uint8 auth_faile = 0x01;
@@ -177,6 +178,8 @@ int handle_force_firmware_upgrade_frame(espush_connection* conn, Frame* f)
 int handle_uart_transport_frame(espush_connection* conn, Frame* f)
 {
 	rt_kprintf("[%s] \r\n", __FUNCTION__);
+	// void handle_uart_buffer(espush_connection* conn, Frame* f)
+	handle_uart_buffer(conn, f);
 	return 0;
 }
 

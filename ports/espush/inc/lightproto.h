@@ -2,6 +2,8 @@
 #define _GUARD_H_LIGHT_PROTO_H_
 
 #include "rtdef.h"
+#include "espush.h"
+#include "protoframe.h"
 
 /*
 2字节 唯一识别码  2字节 命令枚举 剩余 4 字节内容区
@@ -24,5 +26,7 @@ struct lightproto {
     char data[4];
 };
 
-
+void handle_uart_buffer(espush_connection* conn, Frame* f);
+void deserialize_lightproto_frame(rt_uint8_t* data, struct lightproto* out);
+void serialize_lightproto_frame(struct lightproto* in, rt_uint8_t* out);
 #endif

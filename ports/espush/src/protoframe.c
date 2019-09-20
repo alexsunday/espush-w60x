@@ -7,11 +7,6 @@
 
 const int MAX_FRAME_LEFT = 2048;
 
-union uint16_writer {
-	uint16 val;
-	uint8  data[2];
-};
-
 Frame* malloc_empty_frame(uint8 method)
 {
 	Frame *rsp = espush_malloc(sizeof(Frame));

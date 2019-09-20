@@ -9,6 +9,7 @@
 #define FRAME_DYN_DATA 1
 
 #define method_login 0x01
+#define method_uart  0x03
 #define cs_connected 1
 #define cs_unconnected 0
 #define cs_connecting 2
@@ -47,6 +48,11 @@ typedef struct {
 	size_t cap;
 } Buffer;
 
+
+union uint16_writer {
+	uint16 val;
+	uint8  data[2];
+};
 
 Buffer* malloc_buffer(size_t len);
 void free_buffer(Buffer* buf);
