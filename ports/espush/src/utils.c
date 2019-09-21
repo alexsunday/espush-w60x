@@ -1,4 +1,7 @@
 
+#include <wm_type_def.h>
+#include <wm_efuse.h>
+
 #include "utils.h"
 #include "oswrap.h"
 
@@ -63,11 +66,35 @@ size_t hexs2bin(const char *hex, unsigned char *out)
 	return len;
 }
 
+void show_raw(char* buf, int len)
+{
+	int i;
+	for(i=0; i!=len; ++i) {
+		rt_kprintf("%02X ", (unsigned int)buf[i]);
+	}
+
+	rt_kprintf("\r\n");
+}
+
+void get_chipid(void)
+{
+	int ret;
+	uint8_t chipbuf[16];
+	rt_memset(chipbuf, 0, sizeof(chipbuf));
+	ret = tls_get_chipid(chipbuf);
+
+	rt_kprintf("ret: [%d]\r\n", ret);
+	show_raw(chipbuf, sizeof(chipbuf));
+}
 
 void get_imei(uint8* out)
 {
+	const char* prefix = "W60X";
 	const char* imei = "169300033622123";
 	int length = espush_strlen(imei);
 	espush_memcpy(out, imei, length);
 	out[length] = 0;
 }
+
+
+MSH_CMD_EXPORT(get_chipid, get_chipid and show.);

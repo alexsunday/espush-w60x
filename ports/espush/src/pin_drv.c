@@ -9,6 +9,9 @@ const int gl_lines[] = {19, 20, 21, 22};
 const int gl_lines[] = {19, 20, 21, 22};
 #endif
 
+#define LINE_ON_STATE PIN_LOW
+#define LINE_OFF_STATE PIN_HIGH
+
 void line_pin(int idx, int mode)
 {
   int size = sizeof(gl_lines) / sizeof(int);
@@ -24,12 +27,12 @@ void line_pin(int idx, int mode)
 
 void set_line_on(int idx)
 {
-  line_pin(idx, PIN_LOW);
+  line_pin(idx, LINE_ON_STATE);
 }
 
 void set_line_off(int idx)
 {
-  line_pin(idx, PIN_HIGH);
+  line_pin(idx, LINE_OFF_STATE);
 }
 
 /*
@@ -52,7 +55,24 @@ int device_get_lines(void)
   return sizeof(gl_lines) / sizeof(int);
 }
 
-int device_get_lines_state(rt_bool_t *states, size_t max_size)
+/*
+返回状态的 PIN_MAP ，由低位 到 高位
+*/
+uint32_t device_get_lines_state(void)
 {
-  return -1;
+  int i, mode, state;
+  uint32_t result = 0;
+
+  for(i=0; i!=device_get_lines(); ++i) {
+    mode = rt_pin_read(gl_lines[i]) << i;
+    if(mode == LINE_ON_STATE) {
+      state = 1;
+    } else {
+      state = 0;
+    }
+    
+    result |= state << i;
+  }
+
+  return result;
 }

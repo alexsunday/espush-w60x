@@ -70,11 +70,24 @@ int device_get_lines_state(rt_bool_t *states, size_t max_size);
 */
 void handle_proto_query(espush_connection* conn, struct lightproto* in)
 {
-  //
+  RT_ASSERT(conn);
+  RT_ASSERT(in);
+
+  uint32_t result = device_get_lines_state();
+  struct lightproto out;
+  out.txid = in->txid;
+  out.cmd = in->cmd;
+  
+  union uint32_writer w;
+  w.val = htonl(result);
+  rt_memcpy(out.data, w.data, sizeof(w));
+  write_lightproto_frame(conn, &out);
 }
 
 void handle_proto_set_line(espush_connection* conn, struct lightproto* in)
 {
+  RT_ASSERT(conn);
+  RT_ASSERT(in);
   union uint16_writer w;
 
   // line
@@ -93,9 +106,26 @@ void handle_proto_set_line(espush_connection* conn, struct lightproto* in)
   write_lightproto_frame(conn, in);
 }
 
+// 全开/全关
 void handle_proto_set_batch(espush_connection* conn, struct lightproto* in)
 {
-  //
+  RT_ASSERT(conn);
+  RT_ASSERT(in);
+  int i, rc;
+  // state
+  union uint16_writer w;
+  rt_memcpy(w.data, in->data, 2);
+  uint16_t state = ntohs(w.val);
+
+  int size = device_get_lines();
+  for(i=0; i!=size; ++i) {
+    rc = device_set_line_state(i + 1, state);
+    if(rc < 0) {
+      rt_kprintf("device set line %d failed.\r\n", i + 1);
+    }
+  }
+
+  write_lightproto_frame(conn, in);
 }
 
 /*

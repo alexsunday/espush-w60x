@@ -54,6 +54,11 @@ union uint16_writer {
 	uint8  data[2];
 };
 
+union uint32_writer {
+	uint32 val;
+	uint8  data[4];
+};
+
 Buffer* malloc_buffer(size_t len);
 void free_buffer(Buffer* buf);
 

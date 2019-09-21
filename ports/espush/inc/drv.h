@@ -16,6 +16,6 @@ int device_set_line_state(rt_uint8_t line, rt_bool_t state);
 // 获取总回路数
 int device_get_lines(void);
 
-int device_get_lines_state(rt_bool_t *states, size_t max_size);
+uint32_t device_get_lines_state(void);
 
 #endif
