@@ -6,7 +6,7 @@
 #if defined(SOC_W600_A8xx)
 const int gl_lines[] = {19, 20, 21, 22};
 #elif defined(SOC_W601_A8xx)
-const int gl_lines[] = {19, 20, 21, 22};
+const int gl_lines[] = {30, 31, 32, 45};
 #endif
 
 #define LINE_ON_STATE PIN_LOW
