@@ -27,32 +27,6 @@ int get_reconnect_wait_ms(int re_count)
 	return 3000;
 }
 
-/*
-1, ntp
-2, bootstrap, connection, wait
-*/
-int run_espush(void)
-{
-	int rc;
-	
-	rc = ntp_sync();
-	if(rc < 0) {
-		rt_kprintf("ntp sync failed.\r\n");
-		return -1;
-	}
-	
-	while(1) {
-		rc = sock_task();
-		if(rc == -1) {
-			//
-		} else if(rc == response_authorization_fail) {
-			// sleep 1 hours.
-			rt_thread_mdelay(1000 * 3600);
-		}
-		rt_thread_mdelay(1000);
-	}
-}
-
 int dns_query_byname(const char* name, struct sockaddr_in *serv_addr)
 {
 	RT_ASSERT(name);
@@ -62,6 +36,7 @@ int dns_query_byname(const char* name, struct sockaddr_in *serv_addr)
 	struct hostent *server;
 
 	for(i=0; i!=dns_query_times; ++i) {
+		rt_kprintf("DNS: [%s]\r\n", name);
 		server = gethostbyname(name);
 		if(!server) {
 			rt_thread_mdelay(dns_query_interval);
@@ -319,7 +294,33 @@ int send_dev_info(espush_connection* conn)
 	return 0;
 }
 
-int sock_task(void)
+int get_server_address(struct _server_addr_s* addr)
+{
+	int rc;
+
+	RT_ASSERT(addr);
+	rc = bootstrap(&addr);
+	if(rc < 0) {
+		rt_kprintf("bootstrap failed.\r\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+int get_server_address_local(struct _server_addr_s* addr)
+{
+	RT_ASSERT(addr);
+
+	#define LOCAL_DEST "192.168.2.107"
+	rt_memcpy(addr->host, LOCAL_DEST, espush_strlen(LOCAL_DEST));
+	addr->port = 21502;
+	addr->use_tls = 0;
+
+	return 0;
+}
+
+int sock_task(void* params)
 {
 	int rc;
 	int sock = -1;
@@ -328,7 +329,8 @@ int sock_task(void)
 	struct sockaddr_in serv_addr;
 
 	espush_memset(&conn, 0, sizeof(espush_connection));
-	rc = bootstrap(&addr);
+	// rc = get_server_address(&addr);
+	rc = get_server_address_local(&addr);
 	if(rc < 0) {
 		rt_kprintf("bootstrap failed.\r\n");
 		return -1;
@@ -388,14 +390,14 @@ int test_dns(void)
 	
 	int rc = dns_query_byname("gw.espush.cn", &addr);
 	if(rc < 0) {
-		rt_kprintf("dns query failed.\r\n");
+		rt_kprintf("dns query1 failed.\r\n");
 	} else {
 		rt_kprintf("result: [%d]\r\n", addr.sin_addr.s_addr);
 	}
 	
 	rc = dns_query_byname("192.168.12.32", &addr);
 	if(rc < 0) {
-		rt_kprintf("dns query failed.\r\n");
+		rt_kprintf("dns query2 failed.\r\n");
 	} else {
 		rt_kprintf("result: [%d]\r\n", addr.sin_addr.s_addr);
 	}
@@ -403,12 +405,5 @@ int test_dns(void)
 	return 0;
 }
 
-int test_espush(void)
-{
-	sock_task();
-	
-	return 0;
-}
 
-MSH_CMD_EXPORT(test_espush, ESPush cloud TEST);
 MSH_CMD_EXPORT(test_dns, ESPush DNS TEST);

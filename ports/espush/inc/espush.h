@@ -20,7 +20,6 @@ typedef struct {
 
 int ntp_sync(void);
 
-int run_espush(void);
-int sock_task(void);
+int sock_task(void* params);
 
 #endif
