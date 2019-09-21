@@ -7,7 +7,8 @@
 #include "bootstrap.h"
 #include "utils.h"
 
-const char* URL = "http://light.espush.cn/api/portal/light/bootstrap";
+const char* cloudURL = "http://light.espush.cn/api/portal/light/bootstrap";
+const char* localURL = "http://192.168.2.107:8001/api/portal/light/bootstrap";
 
 void show_address(struct _server_addr_s *addr)
 {
@@ -53,16 +54,23 @@ int parse_response(const char* rsp, struct _server_addr_s *addr)
 	return 0;
 }
 
-int bootstrap(struct _server_addr_s *addr)
+int bootstrap(int is_test_env, struct _server_addr_s *addr)
 {
 	RT_ASSERT(addr);
 	unsigned char *result = NULL;
+	const char* baseURL;
 	
 	char imei_buf[16];
 	char url_buf[256];
 	get_imei((uint8*)imei_buf);
 
-	rt_snprintf(url_buf, sizeof(url_buf), "%s?imei=%s&imsi=%s&version=%s&project=%s", URL, imei_buf, imei_buf, "1.0.1", "PROJECT-WIFI-W60X");
+	if(is_test_env) {
+		baseURL = localURL;
+	} else {
+		baseURL = cloudURL;
+	}
+
+	rt_snprintf(url_buf, sizeof(url_buf), "%s?imei=%s&imsi=%s&version=%s&project=%s", baseURL, imei_buf, imei_buf, "1.0.1", "PROJECT-WIFI-W60X");
 	rt_kprintf("URL:=>[%s]\r\n", url_buf);
 	int rc = webclient_request(url_buf, NULL, NULL, &result);
 	if(rc < 0) {
@@ -88,7 +96,7 @@ int test_bootstrap(void)
 	rt_kprintf("prepare bootstrap.\r\n");
 	
 	struct _server_addr_s addr;
-	int rc = bootstrap(&addr);
+	int rc = bootstrap(0, &addr);
 	if(rc < 0) {
 		rt_kprintf("bootstrap returned -1\r\n");
 	}

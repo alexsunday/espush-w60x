@@ -8,6 +8,10 @@
 #include "utils.h"
 #include "lightproto.h"
 
+#define RUN_LOCAL_DEV 1
+#define RUN_CLOUD_PROD 0
+#define RUN_ENV RUN_LOCAL_DEV
+
 const uint8 auth_success = 0x00;
 const uint8 auth_faile = 0x01;
 const int dns_query_interval = 1000;
@@ -294,32 +298,6 @@ int send_dev_info(espush_connection* conn)
 	return 0;
 }
 
-int get_server_address(struct _server_addr_s* addr)
-{
-	int rc;
-
-	RT_ASSERT(addr);
-	rc = bootstrap(&addr);
-	if(rc < 0) {
-		rt_kprintf("bootstrap failed.\r\n");
-		return -1;
-	}
-
-	return 0;
-}
-
-int get_server_address_local(struct _server_addr_s* addr)
-{
-	RT_ASSERT(addr);
-
-	#define LOCAL_DEST "192.168.2.107"
-	rt_memcpy(addr->host, LOCAL_DEST, espush_strlen(LOCAL_DEST));
-	addr->port = 21502;
-	addr->use_tls = 0;
-
-	return 0;
-}
-
 int sock_task(void* params)
 {
 	int rc;
@@ -329,13 +307,12 @@ int sock_task(void* params)
 	struct sockaddr_in serv_addr;
 
 	espush_memset(&conn, 0, sizeof(espush_connection));
-	// rc = get_server_address(&addr);
-	rc = get_server_address_local(&addr);
+	rc = bootstrap(RUN_ENV, &addr);
 	if(rc < 0) {
 		rt_kprintf("bootstrap failed.\r\n");
 		return -1;
 	}
-	
+
 	// dns 10 times
 	espush_memset(&serv_addr, 0, sizeof(struct sockaddr_in));
 	rc = dns_query_byname(addr.host, &serv_addr);

@@ -12,7 +12,7 @@ typedef struct _server_addr_s{
 } server_address;
 
 
-int bootstrap(struct _server_addr_s *addr);
+int bootstrap(int is_test_env, struct _server_addr_s *addr);
 
 
 #endif

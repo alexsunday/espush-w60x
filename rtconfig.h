@@ -273,8 +273,8 @@
 
 /* W60x Device config */
 
-#define SOC_W600_A8xx
-#define W600_EV_BOARD
+#define SOC_W601_A8xx
+#define W601_IOT_BOARD
 
 /* Hardware Drivers Config */
 
