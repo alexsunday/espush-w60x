@@ -1,6 +1,7 @@
 
 #include <wm_type_def.h>
 #include <wm_efuse.h>
+#include <ulog.h>
 
 #include "utils.h"
 #include "oswrap.h"
@@ -70,10 +71,16 @@ void show_raw(char* buf, int len)
 {
 	int i;
 	for(i=0; i!=len; ++i) {
-		rt_kprintf("%02X ", (unsigned int)buf[i]);
+		rt_kprintf("%02X ", (uint8_t)buf[i]);
 	}
-
 	rt_kprintf("\r\n");
+}
+
+void get_mac_addr(void)
+{
+	char mac[6];
+	tls_get_mac_addr(mac);
+	show_raw(mac, sizeof(mac));
 }
 
 void get_chipid(void)
@@ -83,18 +90,30 @@ void get_chipid(void)
 	rt_memset(chipbuf, 0, sizeof(chipbuf));
 	ret = tls_get_chipid(chipbuf);
 
-	rt_kprintf("ret: [%d]\r\n", ret);
+	LOG_D("ret: [%d]", ret);
 	show_raw(chipbuf, sizeof(chipbuf));
 }
 
 void get_imei(uint8* out)
 {
+	int i;
+	char mac[6];
 	const char* prefix = "W60X";
-	const char* imei = "169300033622123";
-	int length = espush_strlen(imei);
-	espush_memcpy(out, imei, length);
-	out[length] = 0;
+
+	rt_memset(mac, 0, sizeof(mac));
+	rt_strncpy(out, prefix, sizeof(prefix));
+	tls_get_mac_addr(mac);
+	for(i=0; i!=sizeof(mac); ++i) {
+		sprintf(out + 4 + (2 * i), "%02X", (uint8_t)mac[i]);
+	}
+	out[sizeof(mac) * 2 + rt_strlen(prefix)] = 0;
 }
 
+void show_imei(void)
+{
+	char imei[24];
+	get_imei(imei);
+	rt_kprintf(imei);
+}
 
-MSH_CMD_EXPORT(get_chipid, get_chipid and show.);
+MSH_CMD_EXPORT(show_imei, get_chipid and show.);

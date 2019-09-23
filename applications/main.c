@@ -13,16 +13,9 @@
 #include <wifi_config.h>
 #include <webclient.h>
 
-#define DBG_TAG "main"
-#define DBG_LVL DBG_LOG
-#include <rtdbg.h>
-
-#define HTTP_GET_URL "http://www.rt-thread.com/service/rt-thread.txt"
-#define HTTP_POST_URL "http://www.rt-thread.com/service/echo"
+#include <ulog.h>
 
 static struct rt_semaphore net_ready;
-const char *post_data = "RT-Thread is an open source IoT operating system from China!";
-
 void wlan_ready_handler(int event, struct rt_wlan_buff *buff, void *parameter);
 void wlan_station_disconnect_handler(int event, struct rt_wlan_buff *buff, void *parameter);
 

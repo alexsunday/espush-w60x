@@ -4,6 +4,8 @@
 #include <sys/select.h>
 #include <dfs_posix.h>
 #include <netdb.h>
+#include <ulog.h>
+
 #include "oswrap.h"
 #include "espush.h"
 #include "protoframe.h"
@@ -19,18 +21,18 @@ int async_sock_recv(espush_connection* conn)
 	
 	rc = recv(conn->sock, rcv_buf, sizeof(rcv_buf), 0);
 	if(rc < 0) {
-		rt_kprintf("socket recv, but response < 0, %d\r\n", rc);
+		LOG_W("socket recv, but response < 0, %d", rc);
 		return -1;
 	}
 	if(rc == 0) {
-		rt_kprintf("connection closed.\r\n");
+		LOG_W("connection closed.");
 		return -1;
 	}
 	has_recv = rc;
 	
 	rc = buffer_add_data(conn->res->buffer, rcv_buf, has_recv);
 	if(rc < 0) {
-		rt_kprintf("add data to buffer failed.\r\n");
+		LOG_W("add data to buffer failed.");
 		return -1;
 	}
 	
@@ -42,20 +44,20 @@ int async_pipe_read(espush_connection* conn)
 	int rc;
 	uint8 rcv_buf[128];
 	
-	rt_kprintf("pipe readable \r\n");
+	LOG_D("pipe readable ");
 	rc = read(conn->res->read_fd, rcv_buf, sizeof(rcv_buf));
 	if(rc == 0) {
-		rt_kprintf("pipe read rsp code 0.\r\n");
+		LOG_W("pipe read rsp code 0.");
 		return 0;
 	}
 	if(rc < 0) {
-		rt_kprintf("pipe read failed. %d\r\n", rc);
+		LOG_W("pipe read failed. %d", rc);
 		return -1;
 	}
-	rt_kprintf("recv %d bytes from pipe.\r\n", rc);
+	LOG_D("recv %d bytes from pipe.", rc);
 	
 	rc = send(conn->sock, rcv_buf, rc, 0);
-	rt_kprintf("send completed, sent: %d\r\n", rc);
+	LOG_D("send completed, sent: %d", rc);
 	return 0;
 }
 
@@ -70,29 +72,29 @@ int select_handle(espush_connection *conn, fd_set *rdset)
 	maxfd = MAX_VAL(conn->sock, conn->res->read_fd) + 1;
 	rc = select(maxfd, rdset, NULL, NULL, NULL);
 	if(rc == 0) {
-		rt_kprintf("timeout???\r\n");
+		LOG_W("timeout???");
 		return 0;
 	}
 	
 	if(rc < 0) {
-		rt_kprintf("select return code: [%d]\r\n", rc);
+		LOG_W("select return code: [%d]", rc);
 		return -1;
 	}
 	
 	if(FD_ISSET(conn->sock, rdset)) {
-		rt_kprintf("network recv data.\r\n");
+		LOG_D("network recv data.");
 		rc = async_sock_recv(conn);
 		if(rc < 0) {
-			rt_kprintf("async sock recv failed.\r\n");
+			LOG_W("async sock recv failed.");
 			return -1;
 		}
 	}
 	
 	if(FD_ISSET(conn->res->read_fd, rdset)) {
-		rt_kprintf("pipe read data.\r\n");
+		LOG_D("pipe read data.");
 		rc = async_pipe_read(conn);
 		if(rc < 0) {
-			rt_kprintf("async pipe recv failed.\r\n");
+			LOG_W("async pipe recv failed.");
 			return -1;
 		}
 	}
@@ -123,20 +125,20 @@ int _nonblock_wait_recv(espush_connection *conn)
 	
 	conn->res = resource_malloc();
 	if(!conn->res) {
-		rt_kprintf("malloc resource failed.\r\n");
+		LOG_W("malloc resource failed.");
 		return -1;
 	}
 	
 	rc = resource_heart_timer_init(conn->res, heart_timeout, conn);
 	if(rc < 0) {
-		rt_kprintf("heart timer init failed.\r\n");
+		LOG_W("heart timer init failed.");
 		goto wait_clean;
 	}
 	
 	while(1) {
 		rc = select_handle(conn, &rdset);
 		if(rc < 0) {
-			rt_kprintf("select return code error.\r\n");
+			LOG_W("select return code error.");
 			break;
 		}
 	}
@@ -190,7 +192,7 @@ int test_select(void)
 	
 	rc = new_socket_and_dial();
 	if(rc < 0) {
-		rt_kprintf("new socket failed.\r\n");
+		LOG_W("new socket failed.");
 		return -1;
 	}
 	fd = rc;
@@ -202,7 +204,7 @@ int test_select(void)
 		
 		rc = select(maxfd, &readset, NULL, NULL, NULL);
 		if(rc == 0) {
-			rt_kprintf("continue...\r\n");
+			LOG_W("continue...");
 			continue;
 		}
 		
@@ -210,7 +212,7 @@ int test_select(void)
 			rt_memset(rcv_buf, 0, sizeof(rcv_buf));
 			rc = recv(fd, rcv_buf, 10, 0);
 			rcv_buf[10] = 0;
-			rt_kprintf("rc: [%d], rs: [%s]\r\n", rc, rcv_buf);
+			LOG_D("rc: [%d], rs: [%s]", rc, rcv_buf);
 			if(rc == 0) {
 				break;
 			}
@@ -218,7 +220,7 @@ int test_select(void)
 	}
 
 	rc = recv(fd, rcv_buf, 100, 0);
-	rt_kprintf("recv code: %d\r\n", rc);
+	LOG_D("recv code: %d", rc);
 	
 	closesocket(fd);
 	return -1;

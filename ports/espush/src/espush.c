@@ -1,6 +1,7 @@
 #include <rtthread.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <ulog.h>
 
 #include "espush.h"
 #include "bootstrap.h"
@@ -10,7 +11,7 @@
 
 #define RUN_LOCAL_DEV 1
 #define RUN_CLOUD_PROD 0
-#define RUN_ENV RUN_LOCAL_DEV
+#define RUN_ENV RUN_CLOUD_PROD
 
 const uint8 auth_success = 0x00;
 const uint8 auth_faile = 0x01;
@@ -40,7 +41,7 @@ int dns_query_byname(const char* name, struct sockaddr_in *serv_addr)
 	struct hostent *server;
 
 	for(i=0; i!=dns_query_times; ++i) {
-		rt_kprintf("DNS: [%s]\r\n", name);
+		// LOG_D("DNS: [%s]", name);
 		server = gethostbyname(name);
 		if(!server) {
 			rt_thread_mdelay(dns_query_interval);
@@ -69,7 +70,7 @@ int create_socket_and_connect(int* sock, struct sockaddr_in *serv_addr)
 	for(i=0; i != 5; ++i) {
 		fd = socket(AF_INET, SOCK_STREAM, 0);
 		if(fd < 0) {
-			rt_kprintf("init socket failed.\r\n");
+			LOG_W("init socket failed.");
 			return -1;
 		}
 		
@@ -102,7 +103,7 @@ int cloud_write_frame(espush_connection* conn, Frame* f)
 int cloud_authorization(espush_connection* conn)
 {
 	// send
-	char imei_buf[16];
+	char imei_buf[24];
 	get_imei((uint8*)imei_buf);
 	
 	Frame *f = new_login_frame(imei_buf);
@@ -113,27 +114,27 @@ int cloud_authorization(espush_connection* conn)
 	int rc = cloud_write_frame(conn, f);
 	free_frame(f);
 	if(rc < 0) {
-		rt_kprintf("write frame failed.\r\n");
+		LOG_W("write frame failed.");
 		return -1;
 	}
 	
 	// recv
 	Frame *rsp = malloc_empty_frame(0);
 	if(!rsp) {
-		rt_kprintf("malloc empty frame failed.\r\n");
+		LOG_W("malloc empty frame failed.");
 		return -1;
 	}
 	
 	rc = recv_frame(conn->sock, rsp);
 	if(rsp->length == 0) {
-		rt_kprintf("authorization response body NULL, aborted.\r\n");
+		LOG_W("authorization response body NULL, aborted.");
 		free_frame(rsp);
 		return -1;
 	}
 	
 	uint8 code = rsp->data[0];
 	if(code != auth_success) {
-		rt_kprintf("authorization response code be %d.\r\n", code);
+		LOG_W("authorization response code be %d.", code);
 		free_frame(rsp);
 		return -1;
 	}
@@ -144,19 +145,19 @@ int cloud_authorization(espush_connection* conn)
 
 int handle_heart_response_frame(espush_connection* conn, Frame* f)
 {
-	rt_kprintf("[%s] \r\n", __FUNCTION__);
+	LOG_D("[%s] ", __FUNCTION__);
 	return 0;
 }
 
 int handle_force_firmware_upgrade_frame(espush_connection* conn, Frame* f)
 {
-	rt_kprintf("[%s] \r\n", __FUNCTION__);
+	LOG_D("[%s] ", __FUNCTION__);
 	return 0;
 }
 
 int handle_uart_transport_frame(espush_connection* conn, Frame* f)
 {
-	rt_kprintf("[%s] \r\n", __FUNCTION__);
+	LOG_D("[%s] ", __FUNCTION__);
 	// void handle_uart_buffer(espush_connection* conn, Frame* f)
 	handle_uart_buffer(conn, f);
 	return 0;
@@ -164,7 +165,7 @@ int handle_uart_transport_frame(espush_connection* conn, Frame* f)
 
 int handle_force_reboot_frame(espush_connection* conn, Frame* f)
 {
-	rt_kprintf("[%s] \r\n", __FUNCTION__);
+	LOG_D("[%s] ", __FUNCTION__);
 	return 0;
 }
 
@@ -179,7 +180,7 @@ int handle_frame(espush_connection *conn, Frame* f)
 {
 	int rc;
 
-	rt_kprintf("handle frame.\r\n");
+	LOG_D("handle frame.");
 	switch (f->method)
 	{
 	case mle_heart_response:
@@ -198,7 +199,7 @@ int handle_frame(espush_connection *conn, Frame* f)
 		rc = handle_server_probe_frame(conn, f);
 		break;
 	default:
-		rt_kprintf("unknown method, ignore.\r\n");
+		LOG_W("unknown method, ignore.");
 		break;
 	}
 
@@ -229,23 +230,23 @@ int handle_buffer(espush_connection *conn, Buffer* buf)
 	
 	f = malloc_empty_frame(0);
 	if(!f) {
-		rt_kprintf("malloc empty frame on handle buffer failed.\r\n");
+		LOG_W("malloc empty frame on handle buffer failed.");
 		return -1;
 	}
 	
 	// length + 1 ，反序列化时，会在 data 最后一个字节 置 0，所以多传一个字节
-	rt_kprintf("prepare deserialize frame, left: %d\r\n", length);
+	LOG_D("prepare deserialize frame, left: %d", length);
 	rc = deserialize_frame(buf->buffer, length + 1, f);
 	buffer_shrink(buf, length);
 	if(rc < 0) {
-		rt_kprintf("deserialize frame failed.\r\n");
+		LOG_W("deserialize frame failed.");
 		free_frame(f);
 		return -1;
 	}
 	
 	rc = handle_frame(conn, f);
 	if(rc < 0) {
-		rt_kprintf("handle frame failed.\r\n");
+		LOG_W("handle frame failed.");
 		free_frame(f);
 		return -1;
 	}
@@ -256,9 +257,7 @@ int handle_buffer(espush_connection *conn, Buffer* buf)
 // run in interupt, must be quick.
 void heart_timer_timeout(void* params)
 {
-	rt_kprintf("trace1.\r\n");
 	RT_ASSERT(params);
-	rt_kprintf("trace2.\r\n");
 	espush_connection *conn = (espush_connection*)params;
 	if(!conn->sock) {
 		return;
@@ -266,9 +265,7 @@ void heart_timer_timeout(void* params)
 	// state handle.
 	
 	static uint8 heart_data[8] = {0, 3, 0, 0, 1};
-	rt_kprintf("trace3.\r\n");
 	send(conn->sock, heart_data, sizeof(heart_data), 0);
-	rt_kprintf("trace4.\r\n");
 }
 
 // _nonblock_wait_recv
@@ -278,7 +275,7 @@ int cloud_wait_forever(espush_connection* conn)
 	RT_ASSERT(!conn->state);
 	conn->state = state_connection_malloc();
 	if(!conn->state) {
-		rt_kprintf("connection state malloc failed.\r\n");
+		LOG_W("connection state malloc failed.");
 		return -1;
 	}
 	
@@ -288,7 +285,7 @@ int cloud_wait_forever(espush_connection* conn)
 	state_connection_free(conn->state);
 	conn->state = NULL;
 	
-	rt_kprintf("wait recv completed. %d\r\n", rc);
+	LOG_D("wait recv completed. %d", rc);
 	return rc;
 }
 
@@ -309,7 +306,7 @@ int sock_task(void* params)
 	espush_memset(&conn, 0, sizeof(espush_connection));
 	rc = bootstrap(RUN_ENV, &addr);
 	if(rc < 0) {
-		rt_kprintf("bootstrap failed.\r\n");
+		LOG_W("bootstrap failed.");
 		return -1;
 	}
 
@@ -317,7 +314,7 @@ int sock_task(void* params)
 	espush_memset(&serv_addr, 0, sizeof(struct sockaddr_in));
 	rc = dns_query_byname(addr.host, &serv_addr);
 	if(rc < 0) {
-		rt_kprintf("dns query failed.\r\n");
+		LOG_W("dns query failed.");
 		return -1;
 	}
 	serv_addr.sin_family = AF_INET;
@@ -326,7 +323,7 @@ int sock_task(void* params)
 	// socket connect 5 times
 	rc = create_socket_and_connect(&sock, &serv_addr);
 	if(rc < 0) {
-		rt_kprintf("connect failed.\r\n");
+		LOG_W("connect failed.");
 		return -1;
 	}
 	
@@ -334,7 +331,7 @@ int sock_task(void* params)
 	conn.sock = sock;
 	rc = cloud_authorization(&conn);
 	if(rc < 0) {
-		rt_kprintf("device authorization failed.\r\n");
+		LOG_W("device authorization failed.");
 		rc = response_authorization_fail;
 		goto task_clean;
 	}
@@ -342,7 +339,7 @@ int sock_task(void* params)
 	// send info
 	rc = send_dev_info(&conn);
 	if(rc < 0) {
-		rt_kprintf("send device info failed.\r\n");
+		LOG_W("send device info failed.");
 		rc = -1;
 		goto task_clean;
 	}
@@ -350,7 +347,7 @@ int sock_task(void* params)
 	// wait recv forever.
 	rc = cloud_wait_forever(&conn);
 	if(rc < 0) {
-		rt_kprintf("cloud disconnected.\r\n");
+		LOG_W("cloud disconnected.");
 		rc = -1;
 		goto task_clean;
 	}
@@ -367,20 +364,19 @@ int test_dns(void)
 	
 	int rc = dns_query_byname("gw.espush.cn", &addr);
 	if(rc < 0) {
-		rt_kprintf("dns query1 failed.\r\n");
+		LOG_W("dns query1 failed.");
 	} else {
-		rt_kprintf("result: [%d]\r\n", addr.sin_addr.s_addr);
+		LOG_W("result: [%d]", addr.sin_addr.s_addr);
 	}
 	
 	rc = dns_query_byname("192.168.12.32", &addr);
 	if(rc < 0) {
-		rt_kprintf("dns query2 failed.\r\n");
+		LOG_W("dns query2 failed.");
 	} else {
-		rt_kprintf("result: [%d]\r\n", addr.sin_addr.s_addr);
+		LOG_W("result: [%d]", addr.sin_addr.s_addr);
 	}
 	
 	return 0;
 }
-
 
 MSH_CMD_EXPORT(test_dns, ESPush DNS TEST);

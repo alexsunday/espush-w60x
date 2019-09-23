@@ -203,6 +203,15 @@
 
 /* Utilities */
 
+#define RT_USING_ULOG
+#define ULOG_OUTPUT_LVL_I
+#define ULOG_OUTPUT_LVL 6
+#define ULOG_LINE_BUF_SIZE 256
+
+/* log format */
+
+#define ULOG_OUTPUT_TIME
+#define ULOG_BACKEND_USING_CONSOLE
 
 /* RT-Thread online packages */
 
@@ -273,8 +282,8 @@
 
 /* W60x Device config */
 
-#define SOC_W601_A8xx
-#define W601_IOT_BOARD
+#define SOC_W600_A8xx
+#define W600_EV_BOARD
 
 /* Hardware Drivers Config */
 

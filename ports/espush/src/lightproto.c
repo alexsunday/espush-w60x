@@ -1,6 +1,7 @@
 
 #include <rtthread.h>
 #include <sys/socket.h>
+#include <ulog.h>
 
 #include "lightproto.h"
 #include "espush.h"
@@ -55,7 +56,7 @@ void write_lightproto_frame(espush_connection* conn, struct lightproto* out)
 
 	Frame *f = malloc_empty_frame(method_uart);
 	if(!f) {
-    rt_kprintf("malloc empty frame failed\r\n");
+    LOG_W("malloc empty frame failed");
 		return;
 	}
 	
@@ -100,7 +101,7 @@ void handle_proto_set_line(espush_connection* conn, struct lightproto* in)
 
   int rc = device_set_line_state(line, state);
   if(rc < 0) {
-    rt_kprintf("device set line state failed. %d\r\n", rc);
+    LOG_W("device set line state failed. %d", rc);
   }
 
   write_lightproto_frame(conn, in);
@@ -121,7 +122,7 @@ void handle_proto_set_batch(espush_connection* conn, struct lightproto* in)
   for(i=0; i!=size; ++i) {
     rc = device_set_line_state(i + 1, state);
     if(rc < 0) {
-      rt_kprintf("device set line %d failed.\r\n", i + 1);
+      LOG_W("device set line %d failed.", i + 1);
     }
   }
 
@@ -138,7 +139,7 @@ void handle_proto_set_batch(espush_connection* conn, struct lightproto* in)
 void handle_uart_buffer(espush_connection* conn, Frame* f)
 {
   if(f->length != 8) {
-    rt_kprintf("recv length not match %d\r\n", f->length);
+    LOG_W("recv length not match %d", f->length);
     return;
   }
 
@@ -151,6 +152,6 @@ void handle_uart_buffer(espush_connection* conn, Frame* f)
   } else if(in.cmd == m_set_batch) {
     handle_proto_set_batch(conn, &in);
   } else {
-    rt_kprintf("unknown uart cmd. \r\n");
+    LOG_W("unknown uart cmd. ");
   }
 }

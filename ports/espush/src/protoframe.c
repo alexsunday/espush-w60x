@@ -2,6 +2,7 @@
 #include <finsh.h>
 #include <sys/socket.h>
 #include <dfs_posix.h>
+#include <ulog.h>
 
 #include "protoframe.h"
 
@@ -115,11 +116,11 @@ int deserialize_frame(uint8* in_data, size_t in_length, Frame *out)
 	
 	// 2 + left == frame length, +1 for null;
 	if(in_length < (2 + left + 1)) {
-		rt_kprintf("in_length not enough, %d, %d.\r\n", in_length, left);
+		LOG_W("in_length not enough, %d, %d.", in_length, left);
 		return -1;
 	}
 	if(left > MAX_FRAME_LEFT) {
-		rt_kprintf("too big frame left %d.\r\n", left);
+		LOG_W("too big frame left %d.", left);
 		return -1;
 	}
 	
@@ -134,7 +135,7 @@ int deserialize_frame(uint8* in_data, size_t in_length, Frame *out)
 		out->data_flag = FRAME_DYN_DATA;
 		out->data = espush_malloc(left - 2);
 		if(!out->data) {
-			rt_kprintf("espush malloc failed. %d\r\n", left);
+			LOG_W("espush malloc failed. %d", left);
 			return -1;
 		}
 	}
@@ -149,7 +150,7 @@ int _write_frame_buf(int fd, Frame* f, uint8* buf, size_t buf_length)
 {
 	int rc = serialize_frame(f, buf, buf_length);
 	if(rc < 0) {
-		rt_kprintf("serialize failed.\r\n");
+		LOG_W("serialize failed.");
 		return -1;
 	}
 
@@ -163,13 +164,13 @@ int write_frame(int fd, Frame* f)
 	
 	int length = frame_length(f);
 	if(length > MAX_FRAME_LEFT) {
-		rt_kprintf("too large frame, cannot serialize.\r\n");
+		LOG_W("too large frame, cannot serialize.");
 		return -1;
 	}
 	
 	uint8* buf = espush_malloc(length);
 	if(!buf) {
-		rt_kprintf("cannot malloc, memory not enough.\r\n");
+		LOG_W("cannot malloc, memory not enough.");
 		return -1;
 	}
 	
@@ -190,20 +191,20 @@ int recv_frame(int fd, Frame *f)
 	// TODO: recv recycle.
 	int rc = recv(fd, head_buf, sizeof(head_buf), 0);
 	if(rc < 0 || rc != sizeof(head_buf)) {
-		rt_kprintf("recv head failed, %d.\r\n", rc);
+		LOG_W("recv head failed, %d.", rc);
 		return -1;
 	}
 	
 	union uint16_writer w;
 	espush_memcpy(w.data, head_buf, 2);
 	int left = ntohs(w.val);
-	rt_kprintf("recv left %d.\r\n", left);
+	LOG_D("recv left %d.", left);
 	
 	// all frame, include header. extra +1 for string NULL suffix.
 	int length = left + 2 + 1;
 	uint8* frame_buf = espush_malloc(length);
 	if(!frame_buf) {
-		rt_kprintf("malloc for frame body failed.\r\n");
+		LOG_W("malloc for frame body failed.");
 		return -1;
 	}
 	
@@ -211,14 +212,14 @@ int recv_frame(int fd, Frame *f)
 	espush_memcpy(frame_buf, head_buf, sizeof(head_buf));
 	rc = recv(fd, frame_buf + 4, left - 2, 0);
 	if(rc != (left - 2)) {
-		rt_kprintf("recv body failed %d.\r\n", rc);
+		LOG_W("recv body failed %d.", rc);
 		espush_free(frame_buf);
 		return -1;
 	}
 	
 	rc = deserialize_frame(frame_buf, length, f);
 	if(rc < 0) {
-		rt_kprintf("deserialize frame failed.\r\n");
+		LOG_W("deserialize frame failed.");
 		espush_free(frame_buf);
 		return -1;
 	}
@@ -261,7 +262,7 @@ int buffer_add_data(Buffer* buf, uint8* ptr, size_t len)
 	RT_ASSERT(len);
 	
 	if((buf->len + len) > buf->cap) {
-		rt_kprintf("buffer full, len: [%d], cap: [%d], cur: [%d]\r\n", buf->len, buf->cap, len);
+		LOG_W("buffer full, len: [%d], cap: [%d], cur: [%d]", buf->len, buf->cap, len);
 		return -1;
 	}
 	
@@ -370,7 +371,7 @@ int resource_pipe_init(struct recv_resource* r)
 	snprintf(r->pipename, sizeof(r->pipename), "pipe%d", pipeno++);
 	p = rt_pipe_create(r->pipename, PIPE_BUFSZ);
 	if(!p) {
-		rt_kprintf("create pipe failed.\r\n");
+		LOG_W("create pipe failed.");
 		return -1;
 	}
 	r->p = p;
@@ -378,14 +379,14 @@ int resource_pipe_init(struct recv_resource* r)
 	snprintf(devname, sizeof(devname), "/dev/%s", r->pipename);
 	r->read_fd = open(devname, O_RDONLY, 0);
 	if(r->read_fd < 0) {
-		rt_kprintf("open read pipe failed.\r\n");
+		LOG_W("open read pipe failed.");
 		rt_pipe_delete(r->pipename);
 		return -1;
 	}
 	
 	r->write_fd = open(devname, O_WRONLY, 0);
 	if(r->write_fd < 0) {
-		rt_kprintf("open write pipe failed.\r\n");
+		LOG_W("open write pipe failed.");
 		rt_pipe_delete(r->pipename);
 		close(r->read_fd);
 		return -1;
@@ -401,12 +402,12 @@ void resource_pipe_deinit(struct recv_resource* r)
 	
 	rc = close(r->read_fd);
 	if(rc < 0) {
-		rt_kprintf("close read pipe fd failed.\r\n");
+		LOG_W("close read pipe fd failed.");
 	}
 	
 	rc = close(r->write_fd);
 	if(rc < 0) {
-		rt_kprintf("close read pipe fd failed.\r\n");
+		LOG_W("close read pipe fd failed.");
 	}
 	
 	rt_pipe_delete(r->pipename);
@@ -503,8 +504,8 @@ int frametest(void)
 	bin2hex(out, length, display);
 	display[2 * length] = 0;
 	
-	rt_kprintf("rsp: [%d], method: [%d], txid: [%d], content: [%s]\r\n", rsp, frame->method, frame->txid, frame->data);
-	rt_kprintf("out: [%s]\r\n", display);
+	LOG_D("rsp: [%d], method: [%d], txid: [%d], content: [%s]", rsp, frame->method, frame->txid, frame->data);
+	LOG_D("out: [%s]", display);
 	
 	free_frame(frame);
 	return 0;
@@ -528,13 +529,13 @@ int test_buffer_extract(void)
 	int rc;
 	while(1) {
 		rc = buffer_try_extract(buf);
-		rt_kprintf("extract test result: [%d]\r\n", rc);
+		LOG_W("extract test result: [%d]", rc);
 		if(rc == 0) {
 			break;
 		}
 		buffer_shrink(buf, rc);
 	}
-	rt_kprintf("test completed, left: %d \r\n", buf->len);
+	LOG_D("test completed, left: %d ", buf->len);
 	free_buffer(buf);
 	return 0;
 }
@@ -543,7 +544,6 @@ struct recv_resource* g_r;
 int test_resource_new(void)
 {
 	g_r = resource_malloc();
-	rt_kprintf("malloc ok...\r\n");
 	return 0;
 }
 
@@ -552,7 +552,6 @@ int test_resource_del(void)
 	if(g_r) {
 		resource_free(g_r);
 	}
-	rt_kprintf("resource free ok.\r\n");
 	return 0;
 }
 

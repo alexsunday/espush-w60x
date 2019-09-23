@@ -4,6 +4,8 @@
 #include <webclient.h>
 #include <cJSON.h>
 
+#include <ulog.h>
+
 #include "bootstrap.h"
 #include "utils.h"
 
@@ -12,7 +14,7 @@ const char* localURL = "http://192.168.2.107:8001/api/portal/light/bootstrap";
 
 void show_address(struct _server_addr_s *addr)
 {
-	rt_kprintf("<%s:%d TLS:%d>", addr->host, addr->port, addr->use_tls);
+	LOG_D("<%s:%d TLS:%d>", addr->host, addr->port, addr->use_tls);
 }
 
 int parse_response(const char* rsp, struct _server_addr_s *addr)
@@ -23,23 +25,23 @@ int parse_response(const char* rsp, struct _server_addr_s *addr)
 
 	root = cJSON_Parse(rsp);
 	if(!root) {
-		rt_kprintf("parse result failed.\r\n");
+		LOG_W("parse result failed.");
 		return -1;
 	}
 	
 	j_address = cJSON_GetObjectItem(root, "address");
 	if(!j_address) {
-		rt_kprintf("extract address field failed.\r\n");
+		LOG_W("extract address field failed.");
 		return -1;
 	}
 	j_port = cJSON_GetObjectItem(root, "port");
 	if(!j_port) {
-		rt_kprintf("extract port field failed.\r\n");
+		LOG_W("extract port field failed.");
 		return -1;
 	}
 	j_tls = cJSON_GetObjectItem(root, "use_tls");
 	if(!j_tls) {
-		rt_kprintf("extract use_tls field failed.\r\n");
+		LOG_W("extract use_tls field failed.");
 		return -1;
 	}
 	
@@ -60,7 +62,7 @@ int bootstrap(int is_test_env, struct _server_addr_s *addr)
 	unsigned char *result = NULL;
 	const char* baseURL;
 	
-	char imei_buf[16];
+	char imei_buf[24];
 	char url_buf[256];
 	get_imei((uint8*)imei_buf);
 
@@ -71,18 +73,17 @@ int bootstrap(int is_test_env, struct _server_addr_s *addr)
 	}
 
 	rt_snprintf(url_buf, sizeof(url_buf), "%s?imei=%s&imsi=%s&version=%s&project=%s", baseURL, imei_buf, imei_buf, "1.0.1", "PROJECT-WIFI-W60X");
-	rt_kprintf("URL:=>[%s]\r\n", url_buf);
+	// LOG_D("%s", url_buf);
 	int rc = webclient_request(url_buf, NULL, NULL, &result);
 	if(rc < 0) {
-		rt_kprintf("request failed. %d\r\n", rc);
+		LOG_W("request failed. %d", rc);
 		return rc;
 	}
 	
-	rt_kprintf("response: [%s]\r\n", result);
-	
+	// LOG_D("response: [%s]", result);
 	rc = parse_response((const char*)result, addr);
 	if(rc < 0) {
-		rt_kprintf("parse response failed. %d\r\n", rc);
+		LOG_W("parse response failed. %d", rc);
 		return rc;
 	}
 	
@@ -92,13 +93,11 @@ int bootstrap(int is_test_env, struct _server_addr_s *addr)
 
 
 int test_bootstrap(void)
-{
-	rt_kprintf("prepare bootstrap.\r\n");
-	
+{	
 	struct _server_addr_s addr;
 	int rc = bootstrap(0, &addr);
 	if(rc < 0) {
-		rt_kprintf("bootstrap returned -1\r\n");
+		LOG_W("bootstrap returned -1");
 	}
 	show_address(&addr);
 	

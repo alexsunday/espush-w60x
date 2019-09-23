@@ -1,10 +1,12 @@
 #include <rtthread.h>
-#include <rtdevice.h> 
+#include <rtdevice.h>
+#include <ulog.h>
+
 #include "drv.h"
 
 // 默认 4 路
 #if defined(SOC_W600_A8xx)
-const int gl_lines[] = {19, 20, 21, 22};
+const int gl_lines[] = {20, 21, 22, 23};
 #elif defined(SOC_W601_A8xx)
 const int gl_lines[] = {30, 31, 32, 45};
 #endif
@@ -16,7 +18,7 @@ void line_pin(int idx, int mode)
 {
   int size = sizeof(gl_lines) / sizeof(int);
   if(idx > size) {
-    rt_kprintf("too large line number\r\n");
+    LOG_E("too large line number\r\n");
     return;
   }
 
