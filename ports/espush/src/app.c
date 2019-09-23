@@ -28,8 +28,10 @@ static int run_espush(void)
 	sock_task(NULL);
 }
 
+extern const int response_authorization_fail;
 static void espush_task(void* params)
 {
+	int rc;
 	rt_bool_t state;
 	while(1) {
 		state = rt_wlan_is_ready();
@@ -38,7 +40,11 @@ static void espush_task(void* params)
 			continue;
 		}
 		LOG_I("prepare connect to cloud.");
-		sock_task(params);
+		rc = sock_task(params);
+		if(rc == response_authorization_fail) {
+			rt_thread_mdelay(1000 * 3600);
+			continue;
+		}
 	}
 }
 

@@ -113,7 +113,7 @@ void show_imei(void)
 {
 	char imei[24];
 	get_imei(imei);
-	rt_kprintf(imei);
+	rt_kprintf("%s\r\n", imei);
 }
 
 MSH_CMD_EXPORT(show_imei, get_chipid and show.);
