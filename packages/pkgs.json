@@ -23,5 +23,10 @@
   "path": "/packages/system/fal", 
   "ver": "v0.3.0", 
   "name": "FAL"
+ }, 
+ {
+  "path": "/packages/peripherals/button", 
+  "ver": "v1.0.1", 
+  "name": "BUTTON"
  }
 ]
