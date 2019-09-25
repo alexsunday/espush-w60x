@@ -1549,13 +1549,14 @@ int webclient_request_header_add(char **request_header, const char *fmt, ...)
  * @return <0: request failed
  *        >=0: response buffer size
  */
-int webclient_request(const char *URI, const char *header, const char *post_data, unsigned char **response)
+int webclient_request(const char *URI, const char *header, const char *post_data, unsigned char **response, int *rsp_code)
 {
     struct webclient_session *session;
     int rc = WEBCLIENT_OK;
     int totle_length;
 
     RT_ASSERT(URI);
+    RT_ASSERT(rsp_code);
 
     if (post_data == RT_NULL && response == RT_NULL)
     {
@@ -1586,7 +1587,8 @@ int webclient_request(const char *URI, const char *header, const char *post_data
             }
         }
 
-        if (webclient_get(session, URI) != 200)
+        *rsp_code = webclient_get(session, URI);
+        if (*rsp_code != 200)
         {
             rc = -WEBCLIENT_ERROR;
             goto __exit;
@@ -1632,7 +1634,8 @@ int webclient_request(const char *URI, const char *header, const char *post_data
             webclient_header_fields_add(session, "Content-Type: application/octet-stream\r\n");
         }
 
-        if (webclient_post(session, URI, post_data) != 200)
+        *rsp_code = webclient_post(session, URI, post_data);
+        if (*rsp_code != 200)
         {
             rc = -WEBCLIENT_ERROR;
             goto __exit;

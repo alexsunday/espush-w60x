@@ -9,8 +9,8 @@
 #include "bootstrap.h"
 #include "utils.h"
 
-const char* cloudURL = "http://light.espush.cn/api/portal/light/bootstrap";
-const char* localURL = "http://192.168.2.107:8001/api/portal/light/bootstrap";
+const char* cloudURL = "http://light.espush.cn/api/portal/bootstrap";
+const char* localURL = "http://192.168.2.107:8001/api/portal/bootstrap";
 
 void show_address(struct _server_addr_s *addr)
 {
@@ -56,11 +56,13 @@ int parse_response(const char* rsp, struct _server_addr_s *addr)
 	return 0;
 }
 
+extern const int response_authorization_fail;
 int bootstrap(int is_test_env, struct _server_addr_s *addr)
 {
 	RT_ASSERT(addr);
-	unsigned char *result = NULL;
+	int rsp_code = 0;
 	const char* baseURL;
+	unsigned char *result = NULL;
 	
 	char imei_buf[24];
 	char url_buf[256];
@@ -72,11 +74,12 @@ int bootstrap(int is_test_env, struct _server_addr_s *addr)
 		baseURL = cloudURL;
 	}
 
-	rt_snprintf(url_buf, sizeof(url_buf), "%s?imei=%s&imsi=%s&version=%s&project=%s", baseURL, imei_buf, imei_buf, "1.0.1", "PROJECT-WIFI-W60X");
+	rt_snprintf(url_buf, sizeof(url_buf), "%s?chip_id=%s", baseURL, imei_buf);
 	// LOG_D("%s", url_buf);
-	int rc = webclient_request(url_buf, NULL, NULL, &result);
+	int rc = webclient_request(url_buf, NULL, NULL, &result, &rsp_code);
 	if(rc < 0) {
 		LOG_W("request failed. %d", rc);
+
 		return rc;
 	}
 	
@@ -84,25 +87,13 @@ int bootstrap(int is_test_env, struct _server_addr_s *addr)
 	rc = parse_response((const char*)result, addr);
 	if(rc < 0) {
 		LOG_W("parse response failed. %d", rc);
+		if(rsp_code != 0) {
+			// bootstrap failed.
+			return response_authorization_fail;
+		}
 		return rc;
 	}
 	
 	web_free(result);
 	return 0;
 }
-
-
-int test_bootstrap(void)
-{	
-	struct _server_addr_s addr;
-	int rc = bootstrap(0, &addr);
-	if(rc < 0) {
-		LOG_W("bootstrap returned -1");
-	}
-	show_address(&addr);
-	
-	return 0;
-}
-
-MSH_CMD_EXPORT(test_bootstrap, ESPush bootstrap test);
-

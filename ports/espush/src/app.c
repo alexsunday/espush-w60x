@@ -6,6 +6,7 @@
 #include <ulog.h>
 
 #include "espush.h"
+#include "ledblink.h"
 
 #define THREAD_PRIORITY         25
 #define THREAD_STACK_SIZE       512
@@ -23,23 +24,20 @@ static int espush(void)
 	return 0;
 }
 
-static int run_espush(void)
-{
-	sock_task(NULL);
-}
-
 extern const int response_authorization_fail;
 static void espush_task(void* params)
 {
 	int rc;
 	rt_bool_t state;
+	led_blink(2, 2);
 	while(1) {
 		state = rt_wlan_is_ready();
 		if(!state) {
-			rt_thread_mdelay(1000);
+			rt_thread_mdelay(100);
 			continue;
 		}
 		LOG_I("prepare connect to cloud.");
+		led_blink(8, 8);
 		rc = sock_task(params);
 		if(rc == response_authorization_fail) {
 			rt_thread_mdelay(1000 * 3600);
@@ -66,6 +64,5 @@ int espush_init(void)
 }
 
 // MSH_CMD_EXPORT(espush, ESPush Hello world);
-// MSH_CMD_EXPORT(run_espush, run espush directly);
 INIT_APP_EXPORT(espush_init);
 

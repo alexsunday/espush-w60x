@@ -8,6 +8,7 @@
 #include "protoframe.h"
 #include "utils.h"
 #include "lightproto.h"
+#include "ledblink.h"
 
 #define RUN_LOCAL_DEV 1
 #define RUN_CLOUD_PROD 0
@@ -307,7 +308,7 @@ int sock_task(void* params)
 	rc = bootstrap(RUN_ENV, &addr);
 	if(rc < 0) {
 		LOG_W("bootstrap failed.");
-		return -1;
+		return rc;
 	}
 
 	// dns 10 times
@@ -344,6 +345,8 @@ int sock_task(void* params)
 		goto task_clean;
 	}
 
+	// 连上服务器后 led 可以常亮
+	led_always_on();
 	// wait recv forever.
 	rc = cloud_wait_forever(&conn);
 	if(rc < 0) {
@@ -357,26 +360,3 @@ task_clean:
 	closesocket(sock);
 	return rc;
 }
-
-int test_dns(void)
-{
-	struct sockaddr_in addr;
-	
-	int rc = dns_query_byname("gw.espush.cn", &addr);
-	if(rc < 0) {
-		LOG_W("dns query1 failed.");
-	} else {
-		LOG_W("result: [%d]", addr.sin_addr.s_addr);
-	}
-	
-	rc = dns_query_byname("192.168.12.32", &addr);
-	if(rc < 0) {
-		LOG_W("dns query2 failed.");
-	} else {
-		LOG_W("result: [%d]", addr.sin_addr.s_addr);
-	}
-	
-	return 0;
-}
-
-MSH_CMD_EXPORT(test_dns, ESPush DNS TEST);
