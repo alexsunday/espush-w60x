@@ -2,16 +2,19 @@
 #include <rtthread.h>
 #include <ulog.h>
 
-#include "button.h"
 #include <smartconfig.h>
+#include "button.h"
+#include "ledblink.h"
 
 #if defined(SOC_W600_A8xx)
 // W600 EVB 按钮为 低电平触发, PB7 ==> 27
+// W600 菊花板 为 PA0 => 13
 #define KEY_DOWN_EDGE PIN_LOW
-#define KEY_PIN 27
+#define KEY_PIN 13
 #elif defined(SOC_W601_A8xx)
-#define KEY_DOWN_EDGE PIN_LOW
-#define KEY_PIN 27
+// W601 IoT Board PA8 KEY_UP => 36
+#define KEY_DOWN_EDGE PIN_HIGH
+#define KEY_PIN 36
 #endif
 
 static Button_t airkiss_btn;
@@ -41,6 +44,7 @@ void btn_long_click_cb(void *btn)
   result = rt_wlan_set_mode(RT_WLAN_DEVICE_STA_NAME, RT_WLAN_STATION);
   if(result == RT_EOK) {
     LOG_I("start airkiss.");
+    led_blink(10, 10);
     smartconfig_demo();
   }
 }

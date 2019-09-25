@@ -29,7 +29,7 @@ static void espush_task(void* params)
 {
 	int rc;
 	rt_bool_t state;
-	led_blink(2, 2);
+	led_blink(1, 1);
 	while(1) {
 		state = rt_wlan_is_ready();
 		if(!state) {
@@ -37,10 +37,12 @@ static void espush_task(void* params)
 			continue;
 		}
 		LOG_I("prepare connect to cloud.");
-		led_blink(8, 8);
 		rc = sock_task(params);
 		if(rc == response_authorization_fail) {
 			rt_thread_mdelay(1000 * 3600);
+			continue;
+		} else {
+			rt_thread_mdelay(1000);
 			continue;
 		}
 	}

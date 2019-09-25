@@ -307,7 +307,7 @@ int sock_task(void* params)
 	espush_memset(&conn, 0, sizeof(espush_connection));
 	rc = bootstrap(RUN_ENV, &addr);
 	if(rc < 0) {
-		LOG_W("bootstrap failed.");
+		LOG_W("bootstrap failed, retr later.");
 		return rc;
 	}
 

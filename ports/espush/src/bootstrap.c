@@ -78,8 +78,11 @@ int bootstrap(int is_test_env, struct _server_addr_s *addr)
 	// LOG_D("%s", url_buf);
 	int rc = webclient_request(url_buf, NULL, NULL, &result, &rsp_code);
 	if(rc < 0) {
-		LOG_W("request failed. %d", rc);
-
+		LOG_W("espush bootstrap failed.", rc);
+		if(rsp_code != 0) {
+			// bootstrap failed.
+			return response_authorization_fail;
+		}
 		return rc;
 	}
 	
@@ -87,10 +90,6 @@ int bootstrap(int is_test_env, struct _server_addr_s *addr)
 	rc = parse_response((const char*)result, addr);
 	if(rc < 0) {
 		LOG_W("parse response failed. %d", rc);
-		if(rsp_code != 0) {
-			// bootstrap failed.
-			return response_authorization_fail;
-		}
 		return rc;
 	}
 	

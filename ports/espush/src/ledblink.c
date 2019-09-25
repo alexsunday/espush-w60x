@@ -6,9 +6,8 @@
 
 // 默认 4 路
 #if defined(SOC_W600_A8xx)
-#define DTU_LED_PIN 21
+#define DTU_LED_PIN 19
 #elif defined(SOC_W601_A8xx)
-const int gl_lines[] = {30, 31, 32, 45};
 #define DTU_LED_PIN 30
 #endif
 
@@ -103,9 +102,10 @@ void timer_timeout(void* params)
 // 默认应该是关闭状态
 int dtu_led_init(void)
 {
-  rt_pin_mode(gled.pin, PIN_MODE_OUTPUT);
   rt_memset(&gled, 0, sizeof(gled));
+
   gled.pin = DTU_LED_PIN;
+  rt_pin_mode(gled.pin, PIN_MODE_OUTPUT);
   rt_timer_init(&timer, "LED", timer_timeout, NULL, 100, RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
   led_off();
 
