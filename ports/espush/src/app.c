@@ -66,5 +66,5 @@ int espush_init(void)
 }
 
 // MSH_CMD_EXPORT(espush, ESPush Hello world);
-INIT_APP_EXPORT(espush_init);
+// INIT_APP_EXPORT(espush_init);
 
