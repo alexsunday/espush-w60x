@@ -145,44 +145,31 @@ static void udpserver_test(int argc, char** argv)
 {
     rt_thread_t tid;
 
-    if (argc == 1 || argc > 3)
-    {
+    if (argc == 1 || argc > 3) {
         LOG_I("Please check the command you entered!\n");
         goto __usage;
-    }
-    else
-    {
-        if (rt_strcmp(argv[1], "--help") == 0)
-        {
+    } else {
+        if (rt_strcmp(argv[1], "--help") == 0) {
             goto __usage;
         }
-        else if (rt_strcmp(argv[1], "--stop") == 0)
-        {
+        else if (rt_strcmp(argv[1], "--stop") == 0) {
             is_running = 0;
             return;
-        }
-        else if (rt_strcmp(argv[1], "-p") == 0)
-        {
-            if (started)
-            {
+        } else if (rt_strcmp(argv[1], "-p") == 0) {
+            if (started) {
                 LOG_I("The tcpclient has started!");
                 LOG_I("Please stop tcpclient firstly, by: tcpclient --stop");
                 return;
             }
 
             port = atoi(argv[2]);
-        }
-        else
-        {
+        } else {
             goto __usage;
         }
     }
 
-    tid = rt_thread_create("udp_serv",
-        udpserv, RT_NULL,
-        2048, RT_THREAD_PRIORITY_MAX/3, 20);
-    if (tid != RT_NULL)
-    {
+    tid = rt_thread_create("udp_serv", udpserv, RT_NULL, 2048, 24, 20);
+    if (tid != RT_NULL) {
         rt_thread_startup(tid);
     }
     return;

@@ -8,7 +8,7 @@
 #include "espush.h"
 #include "ledblink.h"
 
-#define THREAD_PRIORITY         25
+#define THREAD_PRIORITY         24
 #define THREAD_STACK_SIZE       512
 #define THREAD_TIMESLICE        5
 ALIGN(RT_ALIGN_SIZE)
@@ -59,12 +59,12 @@ int espush_init(void)
 
 	rt_thread_init(&espthread, "espush", espush_task, NULL,
 		&espthread_stack[0], sizeof(espthread_stack),
-		THREAD_PRIORITY - 1, THREAD_TIMESLICE);
+		THREAD_PRIORITY, THREAD_TIMESLICE);
 	rt_thread_startup(&espthread);
 
 	return 0;
 }
 
 // MSH_CMD_EXPORT(espush, ESPush Hello world);
-// INIT_APP_EXPORT(espush_init);
+INIT_APP_EXPORT(espush_init);
 
