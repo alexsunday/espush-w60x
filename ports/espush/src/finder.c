@@ -95,4 +95,4 @@ int finder_init(void)
 	return 0;
 }
 
-INIT_APP_EXPORT(finder_init);
+// INIT_APP_EXPORT(finder_init);
