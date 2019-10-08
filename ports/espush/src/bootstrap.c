@@ -56,6 +56,123 @@ int parse_response(const char* rsp, struct _server_addr_s *addr)
 	return 0;
 }
 
+
+int webclient_request2(const char *URI, const char *header, const char *post_data, unsigned char **response, int *rsp_code)
+{
+    struct webclient_session *session;
+    int rc = WEBCLIENT_OK;
+    int totle_length;
+
+    RT_ASSERT(URI);
+    RT_ASSERT(rsp_code);
+
+    if (post_data == RT_NULL && response == RT_NULL)
+    {
+        LOG_E("request get failed, get response data cannot be empty.");
+        return -1;
+    }
+
+    if (post_data == RT_NULL)
+    {
+        /* send get request */
+        session = webclient_session_create(WEBCLIENT_HEADER_BUFSZ);
+        if (session == RT_NULL)
+        {
+            rc = -1;
+            goto __exit;
+        }
+
+        if (header != RT_NULL)
+        {
+            char *header_str, *header_ptr;
+            int header_line_length;
+
+            for(header_str = (char *)header; (header_ptr = rt_strstr(header_str, "\r\n")) != RT_NULL; )
+            {
+                header_line_length = header_ptr + rt_strlen("\r\n") - header_str; 
+                webclient_header_fields_add(session, "%.*s", header_line_length, header_str);
+                header_str += header_line_length;
+            }
+        }
+
+        *rsp_code = webclient_get(session, URI);
+        if (*rsp_code != 200)
+        {
+            rc = -1;
+            goto __exit;
+        }
+
+        totle_length = webclient_response(session, response);
+        if (totle_length <= 0)
+        {
+            rc = -1;
+            goto __exit;
+        }
+    }
+    else
+    {
+        /* send post request */
+        session = webclient_session_create(WEBCLIENT_HEADER_BUFSZ);
+        if (session == RT_NULL)
+        {
+            rc = -1;
+            goto __exit;
+        }
+
+        if (header != RT_NULL)
+        {
+            char *header_str, *header_ptr;
+            int header_line_length;
+
+            for(header_str = (char *)header; (header_ptr = rt_strstr(header_str, "\r\n")) != RT_NULL; )
+            {
+                header_line_length = header_ptr + rt_strlen("\r\n") - header_str; 
+                webclient_header_fields_add(session, "%.*s", header_line_length, header_str);
+                header_str += header_line_length;
+            }
+        }
+
+        if (rt_strstr(session->header->buffer, "Content-Length") == RT_NULL)
+        {
+            webclient_header_fields_add(session, "Content-Length: %d\r\n", rt_strlen(post_data));
+        }
+
+        if (rt_strstr(session->header->buffer, "Content-Type") == RT_NULL)
+        {
+            webclient_header_fields_add(session, "Content-Type: application/octet-stream\r\n");
+        }
+
+        *rsp_code = webclient_post(session, URI, post_data);
+        if (*rsp_code != 200)
+        {
+            rc = -1;
+            goto __exit;
+        }
+        
+        totle_length = webclient_response(session, response);
+        if (totle_length <= 0)
+        {
+            rc = -1;
+            goto __exit;
+        }
+    }
+
+__exit:
+    if (session)
+    {
+        webclient_close(session);
+        session = RT_NULL;
+    }
+
+    if (rc < 0)
+    {
+        return rc;
+    }
+
+    return totle_length;
+}
+
+
 extern const int response_authorization_fail;
 int bootstrap(int is_test_env, struct _server_addr_s *addr)
 {
@@ -76,7 +193,7 @@ int bootstrap(int is_test_env, struct _server_addr_s *addr)
 
 	rt_snprintf(url_buf, sizeof(url_buf), "%s?chip_id=%s", baseURL, imei_buf);
 	// LOG_D("%s", url_buf);
-	int rc = webclient_request(url_buf, NULL, NULL, &result, &rsp_code);
+	int rc = webclient_request2(url_buf, NULL, NULL, &result, &rsp_code);
 	if(rc < 0) {
 		LOG_W("espush bootstrap failed.", rc);
 		if(rsp_code != 0) {

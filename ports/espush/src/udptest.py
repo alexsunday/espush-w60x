@@ -16,5 +16,13 @@ def main():
         time.sleep(2)
 
 
+def broadcast_server():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind(('', 21503))
+    while 1:
+        data, addr = s.recvfrom(1024)
+        print('recv from %r: [%s]' % (addr, data))
+
+
 if __name__ == '__main__':
     main()
