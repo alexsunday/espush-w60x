@@ -23,6 +23,16 @@ config $ENV_DIR
     option env="ENV_ROOT"
     default "/"
 
+menu "Lwip mdns configure"
+    config LWIP_MDNS_RESPONDER
+        int "Enable lwip mDNS"
+        default 1
+
+    config LWIP_NUM_NETIF_CLIENT_DATA
+        int "MDNS needs one entry on netif"
+        default 1
+endmenu
+
 source "$RTT_DIR/Kconfig"
 source "$PKGS_DIR/Kconfig"
 source "$BSP_DIR/../W601_IoT_Board/drivers/Kconfig"

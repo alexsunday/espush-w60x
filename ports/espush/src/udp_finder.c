@@ -148,6 +148,7 @@ static void finder_task(void* params)
 }
 
 
+void mdns_finder_task(void* params);
 int finder_init(void)
 {
     rt_thread_t tid;
@@ -160,4 +161,4 @@ int finder_init(void)
     return 0;
 }
 
-INIT_APP_EXPORT(finder_init);
+// INIT_APP_EXPORT(finder_init);
