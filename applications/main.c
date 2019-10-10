@@ -11,7 +11,6 @@
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <wifi_config.h>
-#include <webclient.h>
 
 #include <ulog.h>
 

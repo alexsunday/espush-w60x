@@ -41,3 +41,6 @@ settings/
 cconfig.h
 Bin/
 *.scvd
+
+rtconfig.h
+

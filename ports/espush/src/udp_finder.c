@@ -121,7 +121,7 @@ static int finder_main(int sock)
 }
 
 
-static void finder_task(void* params)
+static void udp_finder_task(void* params)
 {
     int sock, rc;
 
@@ -153,7 +153,8 @@ int finder_init(void)
 {
     rt_thread_t tid;
 
-    tid = rt_thread_create("finder", finder_task, RT_NULL, 2048, 24, 5);
+    // tid = rt_thread_create("finder", udp_finder_task, RT_NULL, 2048, 24, 5);
+    tid = rt_thread_create("finder", mdns_finder_task, RT_NULL, 4096, 24, 5);
     if (tid != RT_NULL) {
         rt_thread_startup(tid);
     }
@@ -161,4 +162,4 @@ int finder_init(void)
     return 0;
 }
 
-// INIT_APP_EXPORT(finder_init);
+INIT_APP_EXPORT(finder_init);

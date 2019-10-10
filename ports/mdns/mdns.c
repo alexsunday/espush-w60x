@@ -1447,7 +1447,7 @@ cleanup:
  * @param netif The network interface to send on
  * @param destination The target address to send to (usually multicast address)
  */
-static void
+void
 mdns_announce(struct netif *netif, const ip_addr_t *destination)
 {
   struct mdns_outpacket announce;
