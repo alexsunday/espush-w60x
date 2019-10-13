@@ -307,7 +307,7 @@ int sock_task(void* params)
 	espush_memset(&conn, 0, sizeof(espush_connection));
 	rc = bootstrap(RUN_ENV, &addr);
 	if(rc < 0) {
-		LOG_W("bootstrap failed, retr later.");
+		LOG_W("bootstrap failed, retry later %d", rc);
 		return rc;
 	}
 
@@ -348,6 +348,7 @@ int sock_task(void* params)
 	// 连上服务器后 led 可以常亮
 	led_always_on();
 	// wait recv forever.
+	LOG_I("connected to cloud server.");
 	rc = cloud_wait_forever(&conn);
 	if(rc < 0) {
 		LOG_W("cloud disconnected.");

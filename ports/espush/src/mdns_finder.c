@@ -35,8 +35,8 @@ void mdns_finder_task(void* params)
         LOG_E("add netif failed. %d", rc);
     }
 
-    rc = mdns_resp_add_service(netif_default, "light", "espush",
-        DNSSD_PROTO_TCP, 80, 3600, srv_txt, NULL);
+    // rc = mdns_resp_add_service(netif_default, "_espush", "_http", DNSSD_PROTO_TCP, 80, 3600, srv_txt, NULL);
+    rc = mdns_resp_add_service(netif_default, "lighter", "_espush", DNSSD_PROTO_TCP, 80, 3600, srv_txt, NULL);
     if(rc == ERR_OK) {
         LOG_I("add service succ.");
     } else {
