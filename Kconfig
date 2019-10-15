@@ -1,5 +1,9 @@
 mainmenu "RT-Thread Configuration"
 
+config $W60X_DIR
+    string
+    option env="W60X_ROOT"
+
 config $BSP_DIR
     string
     option env="BSP_ROOT"
@@ -8,7 +12,6 @@ config $BSP_DIR
 config $RTT_DIR
     string
     option env="RTT_ROOT"
-    default "../W601_IoT_Board/rt-thread"
     
 # you can change the RTT_ROOT default "../.." to your rtthread_root,
 # example : default "F:/git_repositories/rt-thread"
@@ -33,7 +36,7 @@ menu "Lwip mdns configure"
         default 1
 endmenu
 
-source "$RTT_DIR/Kconfig"
+source "$W60X_DIR/rt-thread/Kconfig"
 source "$PKGS_DIR/Kconfig"
-source "$BSP_DIR/../W601_IoT_Board/drivers/Kconfig"
-source "$BSP_DIR/../W601_IoT_Board/libraries/Kconfig"
+source "$W60X_DIR/drivers/Kconfig"
+source "$W60X_DIR/libraries/Kconfig"

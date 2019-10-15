@@ -16,7 +16,7 @@ static void handle_device_info(struct mg_connection *nc, struct http_message *hm
 {
     char resp[128];
     char imei[24];
-    mg_send_response_line(nc, 200, "Content-Type: text/html\r\nConnection: close");
+    mg_send_response_line(nc, 200, "Content-Type: text/html\r\nConnection: close\r\n\r\n");
 
     rt_memset(resp, 0, sizeof(resp));
     rt_memset(imei, 0, sizeof(imei));
@@ -26,7 +26,7 @@ static void handle_device_info(struct mg_connection *nc, struct http_message *hm
 
 static void handle_404(struct mg_connection *nc, struct http_message *hm)
 {
-    mg_send_response_line(nc, 404, "Content-Type: text/html\r\nConnection: close");
+    mg_send_response_line(nc, 404, "Content-Type: text/html\r\nConnection: close\r\n\r\n");
     mg_printf(nc, "Not Found.");
 }
 
@@ -39,11 +39,12 @@ void handle_http_request(struct mg_connection *nc, void* ev_data)
     LOG_I("%p: %.*s %.*s", nc, (int) hm->method.len, hm->method.p, (int) hm->uri.len, hm->uri.p);
 
     // 这里通过 URL 进行分发
-    if(!rt_strcmp(hm->uri.p, "/device/info")) {
+    if(!rt_memcmp(hm->uri.p, "/device/info", rt_strlen("/device/info"))) {
         handle_device_info(nc, hm);
     } else {
         handle_404(nc, hm);
     }
+    mg_send_http_chunk(nc, "", 0);
     nc->flags |= MG_F_SEND_AND_CLOSE;
 }
 
