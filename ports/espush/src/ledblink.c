@@ -112,7 +112,4 @@ int dtu_led_init(void)
   return 0;
 }
 
-MSH_CMD_EXPORT(led_always_off, led off);
-MSH_CMD_EXPORT(led_always_on, led on);
-
 INIT_APP_EXPORT(dtu_led_init);

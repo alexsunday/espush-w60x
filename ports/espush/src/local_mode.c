@@ -16,12 +16,14 @@ static void handle_device_info(struct mg_connection *nc, struct http_message *hm
 {
     char resp[128];
     char imei[24];
-    mg_send_response_line(nc, 200, "Content-Type: text/html\r\nConnection: close\r\n\r\n");
+    int bright = 0;
+    mg_send_response_line(nc, 200, "Content-Type: application/json\r\nConnection: close\r\n\r\n");
 
     rt_memset(resp, 0, sizeof(resp));
     rt_memset(imei, 0, sizeof(imei));
     get_imei(imei);
-    mg_printf(nc, "{\"chip_id\":\"%.*s\",\"type\":\"light\",\"chip\":\"W60X\",\"lines\":4}", rt_strlen(imei), imei);
+    sprintf(resp, "{\"chip_id\":\"%s\",\"type\":\"light\",\"chip\":\"W60X\",\"lines\":4,\"bright\":%d}", imei, bright);
+    mg_printf(nc, resp);
 }
 
 static void handle_404(struct mg_connection *nc, struct http_message *hm)
@@ -44,7 +46,7 @@ void handle_http_request(struct mg_connection *nc, void* ev_data)
     } else {
         handle_404(nc, hm);
     }
-    mg_send_http_chunk(nc, "", 0);
+    // mg_send_http_chunk(nc, "", 0);
     nc->flags |= MG_F_SEND_AND_CLOSE;
 }
 

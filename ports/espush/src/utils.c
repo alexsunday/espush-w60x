@@ -108,12 +108,3 @@ void get_imei(uint8* out)
 	}
 	out[sizeof(mac) * 2 + rt_strlen(prefix)] = 0;
 }
-
-void show_imei(void)
-{
-	char imei[24];
-	get_imei(imei);
-	rt_kprintf("%s\r\n", imei);
-}
-
-MSH_CMD_EXPORT(show_imei, get_chipid and show.);

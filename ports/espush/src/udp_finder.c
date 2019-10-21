@@ -12,9 +12,6 @@
 #include <netdb.h>
 #include <ulog.h>
 
-static int is_running = 0;
-static int port = 21502;
-
 void wait_network(void)
 {
     rt_bool_t state;
@@ -28,6 +25,13 @@ void wait_network(void)
         return;
     }
 }
+
+#define FINDER_USING_MDNS
+
+#ifdef FINDER_USING_UDP
+
+static int is_running = 0;
+static int port = 21502;
 
 /*
 => beep_espush_finder
@@ -146,7 +150,7 @@ static void udp_finder_task(void* params)
         is_running = 0;
     }
 }
-
+#endif
 
 void mdns_finder_task(void* params);
 int finder_init(void)
